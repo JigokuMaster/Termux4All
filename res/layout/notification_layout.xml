@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:orientation="horizontal"
+	android:id="@+id/notification">
+
+	<ImageView
+		android:id="@+id/image"
+		android:layout_width="30dp"
+		android:layout_height="30dp"
+		android:layout_alignParentLeft="true"
+		android:layout_marginRight="10dp"/>
+
+	<LinearLayout
+		android:layout_toRightOf="@+id/image"
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content"
+		android:orientation="vertical">
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:layout_width="wrap_content"
+			android:id="@+id/notification_title"/>
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:textAppearance="?android:attr/textAppearanceSmall"
+			android:layout_width="wrap_content"
+			android:id="@+id/notification_text"/>
+
+		<RelativeLayout
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content"
+			android:id="@+id/notification_sub_layout"
+			android:layout_centerHorizontal="true">
+
+			<Button
+				android:layout_height="wrap_content"
+				style="?android:attr/buttonStyleSmall"
+				android:layout_alignParentLeft="true"
+				android:layout_width="wrap_content"
+				android:textSize="14dp"
+				android:layout_marginLeft="10dp"
+				android:layout_marginRight="20dp"
+				android:id="@+id/notification_exit_btn"
+				
+				/>
+
+			<Button
+				android:layout_height="wrap_content"
+				style="?android:attr/buttonStyleSmall"
+				android:layout_width="wrap_content"
+				android:layout_toRightOf="@+id/notification_exit_btn"
+				android:textSize="14dp"
+				android:id="@+id/notification_wakelock_btn"/>
+
+		</RelativeLayout>
+
+	</LinearLayout>
+
+	<ImageButton
+		android:layout_height="wrap_content"
+		style="?android:attr/buttonBarButtonStyle"
+		android:layout_width="wrap_content"
+		android:src="@android:drawable/ic_menu_more"
+		android:id="@+id/notification_toggle_button"
+		android:layout_alignParentRight="true"/>
+
+</RelativeLayout>
+

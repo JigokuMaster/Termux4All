@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="Theme.Termux_Light" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:alertDialogTheme">@style/TermuxAlertDialogStyle</item>
+
+    </style>
+
+    <style name="TermuxAlertDialogStyle" parent="@android:style/Theme.Dialog">
+        <item name="android:background">#FFFFFF</item>
+    </style>
+
+</resources>
