@@ -45,9 +45,12 @@ public final class ExtraKeysView2x extends GridView{
 
 	private ExtraKeysView2x.GridAdapter mGridAdapter;
 
+	private int mNumRows;
+
 	
     public ExtraKeysView2x(Context context, AttributeSet attrs) {
         super(context, attrs);
+		
     }
     
 	public ExtraKeysView2x(Context context) {
@@ -55,6 +58,7 @@ public final class ExtraKeysView2x extends GridView{
 		
 		
     }
+
     /**
      * HashMap that implements Python dict.get(key, default) function.
      * Default java.util .get(key) is then the same as .get(key, null);
@@ -324,7 +328,17 @@ public final class ExtraKeysView2x extends GridView{
 	{
 		BUTTON_COLOR  = (black ? Color.BLACK : Color.WHITE);
 		TEXT_COLOR = (black ? Color.WHITE : Color.BLACK);
-		setBackgroundColor(BUTTON_PRESSED_COLOR);
+		setBackgroundColor(BUTTON_COLOR);
+	}
+	
+	public void setNumRows(int rows)
+	{
+		mNumRows = rows;
+	}
+	
+	public int getNumRows()
+	{
+		return mNumRows;
 	}
 	
 	
@@ -357,7 +371,7 @@ public final class ExtraKeysView2x extends GridView{
 		{
 			return;
 		}
-		
+		setNumRows(rows);
 		setNumColumns(cols);	
 		if(mGridAdapter != null)
 		{
@@ -376,28 +390,28 @@ public final class ExtraKeysView2x extends GridView{
                 final String buttonText = buttons[row][col];
 
                 Button button;
-				GridView.LayoutParams lp = new GridView.LayoutParams(GridView.LayoutParams.FILL_PARENT, GridView.LayoutParams.FILL_PARENT);
+				GridView.LayoutParams lp = new GridView.LayoutParams(GridView.LayoutParams.WRAP_CONTENT, GridView.LayoutParams.WRAP_CONTENT);
+				
                 if(Arrays.asList("CTRL", "ALT", "FN").contains(buttonText)) {
                     SpecialButtonState state = specialButtons.get(SpecialButton.valueOf(buttonText)); // for valueOf: https://stackoverflow.com/a/604426/1980630
                     state.isOn = true;
                     //button = state.button = new ToggleButton(getContext(), null, android.R.attr.buttonBarButtonStyle);
 					button = new ControlKey(getContext());
 					state.button = (ControlKey)button;
-					button.setLayoutParams(lp);
-                    //button.setClickable(true);
+					
                 } else {
                     button = new Button(getContext());//, null, android.R.attr.buttonBarButtonStyle);
-					button.setLayoutParams(lp);
 					
                 }
 				
 
-				
+				button.setLayoutParams(lp);
                 final String displayedText = charDisplayMap.get(buttonText, buttonText);
                 button.setText(displayedText);
+				                                                                                           
                 button.setTextColor(TEXT_COLOR);
 				button.setBackgroundColor(BUTTON_COLOR);
-
+				
                 button.setOnClickListener(new View.OnClickListener(){
 
 						@Override

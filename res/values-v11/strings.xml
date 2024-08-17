@@ -3,8 +3,8 @@
   <string name="copy_text">Copy</string>
 	<string name="select_text">Select</string>
   <string name="text_selection_more">More…</string>
-    <string name="application_name">Termux</string>
-    <string name="shared_user_label">Termux user</string>
+    <string name="application_name">Termux4All</string>
+    <string name="shared_user_label">Termux4All user</string>
     <string name="new_session">New session</string>
     <string name="new_session_failsafe">Failsafe</string>
     <string name="toggle_soft_keyboard">Keyboard</string>

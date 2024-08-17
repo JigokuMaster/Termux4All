@@ -2335,7 +2335,8 @@ public final class TerminalEmulator {
         /*if (!Objects.equals(oldTitle, newTitle)) {
             mSession.titleChanged(oldTitle, newTitle);
         }*/
-        if (!oldTitle.equals(newTitle)) {
+		
+        if (oldTitle != null && !oldTitle.equals(newTitle)) {
             mSession.titleChanged(oldTitle, newTitle);
          }
     }

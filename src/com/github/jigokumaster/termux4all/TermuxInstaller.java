@@ -65,32 +65,35 @@ final class TermuxInstaller {
             byte[] buf = new byte[fis.available()];
             fis.read(buf);
             fis.close();
-            String versionInfo0 = new String(buf);
-            
+            String versionInfo0 = new String(buf).trim();
             if(!prefs.contains(pref_key))
             {
+                // Log.i(EmulatorDebug.LOG_TAG,"pref_key=[termux_bootstrap_version] not found!");
                 prefs.edit().putString(pref_key, versionInfo0).commit();
+                updateNeeded = true;
 
             }
 
             else{
-                    String versionInfo1 = prefs.getString(pref_key, null);
-                    updateNeeded = !versionInfo0.equals(versionInfo1);
-                   // Log.i(EmulatorDebug.LOG_TAG, String.format("versionInfo0=%s, versionInfo1=%s update=%s", versionInfo0, versionInfo1, updateNeeded) );
+                  String versionInfo1 = prefs.getString(pref_key, "").trim();
+                  updateNeeded = !versionInfo0.equals(versionInfo1);
+
                     
             }
+
         }
         catch(IOException e)
         {
             
-            //updateNeeded = true;
+            
             Log.e(EmulatorDebug.LOG_TAG, "Bootstrap error", e);
             handleInstallError(activity, whenDone);
             return;
         }
 
+        
         final File PREFIX_FILE = new File(TermuxService.PREFIX_PATH);
-        if (PREFIX_FILE.isDirectory() && !updateNeeded) {
+        if (PREFIX_FILE.exists() && !updateNeeded) {
             whenDone.run();
             return;
         }
@@ -226,18 +229,14 @@ final class TermuxInstaller {
 		{
 
 			String zipEntryName = zipEntry.getName();
-			File targetFile = new File(dist, zipEntryName);
-
+			File targetFile = new File(dist, zipEntryName);			
 			boolean isDirectory = zipEntry.isDirectory();
 
 			if(update  && targetFile.exists())
 			{
-				if(isDirectory)
+				if(!isDirectory)
 				{
-					deleteFolder(targetFile);
-				}
-				else{
-					//Log.i(EmulatorDebug.LOG_TAG,"bootstrap update, removing old file "+zipEntryName);
+					// Log.i(EmulatorDebug.LOG_TAG,"bootstrap update, removing old file "+zipEntryName);
 					targetFile.delete();
 				}	
 			}

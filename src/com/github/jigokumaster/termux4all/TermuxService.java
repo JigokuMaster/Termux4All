@@ -53,7 +53,7 @@ import android.graphics.*;
  */
 public final class TermuxService extends Service implements SessionChangedCallback {
 
-    private static final String NOTIFICATION_CHANNEL_ID = "termux_notification_channel";
+    //private static final String NOTIFICATION_CHANNEL_ID = "termux_notification_channel";
 
     /** Note that this is a symlink on the Android M preview. */
     // @SuppressLint("SdCardPath")
@@ -385,7 +385,8 @@ public final class TermuxService extends Service implements SessionChangedCallba
             }
 
             // for now, only system shell is supported  on FROYO and FROYO
-            if (executablePath == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.GINGERBREAD) {
+            //if (executablePath == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.GINGERBREAD) {
+            if (executablePath == null){	
                 // Fall back to system shell as last resort:
                 executablePath = "/system/bin/sh";
             }

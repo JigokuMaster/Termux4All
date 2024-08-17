@@ -26,8 +26,6 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.Scroller;
-import android.widget.Toast;
-
 import com.termux.terminal.EmulatorDebug;
 import com.termux.terminal.KeyHandler;
 import com.termux.terminal.TerminalBuffer;
@@ -62,10 +60,11 @@ public final class TerminalView extends View {
 
     boolean mIsSelectingText = false, mIsDraggingLeftSelection, mInitialTextSelection;
     int mSelX1 = -1, mSelX2 = -1, mSelY1 = -1, mSelY2 = -1;
+	Rect mSelectionArea = null;
     float mSelectionDownX, mSelectionDownY;
-    private ActionMode mActionMode;
+    // private ActionMode mActionMode;
     private BitmapDrawable mLeftSelectionHandle, mRightSelectionHandle;
-
+	
     float mScaleFactor = 1.f;
 	//final ScaleGestureDetector mScaleGestureDetector;
     final GestureAndScaleRecognizer mGestureRecognizer ;
@@ -114,11 +113,21 @@ public final class TerminalView extends View {
             public boolean onSingleTapUp(MotionEvent e) {
                 if (mEmulator == null) return true;
                 if (mIsSelectingText) {
-                    toggleSelectingText(null);
-                    return true;
+					
+                    if(isSelectionAreaClicked(e))
+					{
+						showSelectionMenu(e, true);
+					}
+					
+					else{
+						
+						resetSelection();
+					}
+					return true;
+                    
                 }
+				
                 requestFocus();
-                
                 if (!mEmulator.isMouseTrackingActive()) {
                         mClient.onSingleTapUp(e);
                         return true;
@@ -130,7 +139,8 @@ public final class TerminalView extends View {
 
             @Override
             public boolean onScroll(MotionEvent e, float distanceX, float distanceY) {
-                if (mEmulator == null || mIsSelectingText) return true;
+            
+                if (mEmulator == null  || isSelectionHandleClicked(e) /* || mIsSelectingText*/) return true;
                 
                 scrolledWithFinger = true;
                 distanceY += mScrollRemainder;
@@ -150,7 +160,7 @@ public final class TerminalView extends View {
 
             @Override
             public boolean onFling(final MotionEvent e2, float velocityX, float velocityY) {
-                if (mEmulator == null || mIsSelectingText) return true;
+                if (mEmulator == null || mIsSelectingText ) return true;
                 // Do not start scrolling until last fling has been taken care of:
                 if (!mScroller.isFinished()) return true;
 
@@ -200,16 +210,11 @@ public final class TerminalView extends View {
                 if (mGestureRecognizer.isInProgress()) return;
                 if (mClient.onLongPress(e)) return;
                 if (!mIsSelectingText) {
-                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-					{
-                    	toggleSelectingText(e);
-					}
-					else
-					{
-						showTextActions2x(e, false);
-					}
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);		
+                    
+					showSelectionMenu(e, false);
                 }
+
             }
         });
 		
@@ -253,7 +258,7 @@ public final class TerminalView extends View {
         //
         // Previous keyboard issues:
         // https://github.com/termux/termux-packages/issues/25
-        // https://github.com/termux/termux-app/issues/87.
+        // https://github.com/termux/termux-app/issues/87.                                                              
         // https://github.com/termux/termux-app/issues/126.
         // https://github.com/termux/termux-app/issues/137 (japanese chars and TYPE_NULL).
         outAttrs.inputType = InputType.TYPE_NULL;
@@ -470,18 +475,21 @@ public final class TerminalView extends View {
     }
 
     /** Overriding {@link View#onGenericMotionEvent(MotionEvent)}. */
-    @Override
+    /*
+	@Override
     public boolean onGenericMotionEvent(MotionEvent event) {
-       /* if (mEmulator != null && event.isFromSource(InputDevice.SOURCE_MOUSE) && event.getAction() == MotionEvent.ACTION_SCROLL) {
+       if (mEmulator != null && event.isFromSource(InputDevice.SOURCE_MOUSE) && event.getAction() == MotionEvent.ACTION_SCROLL) {
             // Handle mouse wheel scrolling.
             boolean up = event.getAxisValue(MotionEvent.AXIS_VSCROLL) > 0.0f;
             doScroll(event, up ? -3 : 3);
             return true;
         }
-        */
+        
         return false;
     }
+	*/
 	
+
 	/*
     @SuppressLint("ClickableViewAccessibility")
     @TargetApi(23)*/
@@ -502,11 +510,13 @@ public final class TerminalView extends View {
                     int distanceFromSel1 = Math.abs(cx - mSelX1) + Math.abs(cy - mSelY1);
                     int distanceFromSel2 = Math.abs(cx - mSelX2) + Math.abs(cy - mSelY2);
                     mIsDraggingLeftSelection = distanceFromSel1 <= distanceFromSel2;
-                    mSelectionDownX = ev.getX();
+					mSelectionDownX = ev.getX();
                     mSelectionDownY = ev.getY();
+					mInitialTextSelection = !isSelectionHandleClicked(ev);
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    if (mInitialTextSelection) break;
+                    if (mInitialTextSelection ) break;
+                    
                     float deltaX = ev.getX() - mSelectionDownX;
                     float deltaY = ev.getY() - mSelectionDownY;
                     int deltaCols = (int) Math.ceil(deltaX / mRenderer.mFontWidth);
@@ -520,6 +530,7 @@ public final class TerminalView extends View {
                         mSelX2 += deltaCols;
                         mSelY2 += deltaRows;
                     }
+                    
 
                     mSelX1 = Math.min(mEmulator.mColumns, Math.max(0, mSelX1));
                     mSelX2 = Math.min(mEmulator.mColumns, Math.max(0, mSelX2));
@@ -533,15 +544,17 @@ public final class TerminalView extends View {
                         mSelX2 = tmpX1;
                         mSelY2 = tmpY1;
                     }
-
-                    // mActionMode.invalidateContentRect();
+					if(isSelectionExpanding(ev))
+					{
+						invalidate();
+						return true;
+					}
                     invalidate();
                     break;
                 default:
                     break;
             }
 			
-			//mScaleGestureDetector.onTouchEvent(ev);
             mGestureRecognizer.onTouchEvent(ev);
             return true;
         
@@ -799,28 +812,92 @@ public final class TerminalView extends View {
             if (mIsSelectingText) {
                 final int gripHandleWidth = mLeftSelectionHandle.getIntrinsicWidth();
                 final int gripHandleMargin = gripHandleWidth / 4; // See the png.
-
+                
                 int right = Math.round((mSelX1) * mRenderer.mFontWidth) + gripHandleMargin;
                 int top = (mSelY1 + 1 - mTopRow) * mRenderer.mFontLineSpacing + mRenderer.mFontLineSpacingAndAscent;
-                mLeftSelectionHandle.setBounds(right - gripHandleWidth, top, right, top + mLeftSelectionHandle.getIntrinsicHeight());
+                mLeftSelectionHandle.setBounds(Math.max(0, right - gripHandleWidth), top, right, top + mLeftSelectionHandle.getIntrinsicHeight());
                 mLeftSelectionHandle.draw(canvas);
 
                 int left = Math.round((mSelX2 + 1) * mRenderer.mFontWidth) - gripHandleMargin;
                 top = (mSelY2 + 1 - mTopRow) * mRenderer.mFontLineSpacing + mRenderer.mFontLineSpacingAndAscent;
-                mRightSelectionHandle.setBounds(left, top, left + gripHandleWidth, top + mRightSelectionHandle.getIntrinsicHeight());
+                mRightSelectionHandle.setBounds(Math.max(0, left), top, left + gripHandleWidth, top + mRightSelectionHandle.getIntrinsicHeight());
                 mRightSelectionHandle.draw(canvas);
             }
         }
     }
 	
-	public void doResetSelection()
+	
+	
+	boolean isSelectionHandleClicked(MotionEvent ev)
+	{
+		if(mLeftSelectionHandle != null && mRightSelectionHandle != null)
+		{
+			
+			int x = (int) ev.getX();
+			int y = (int) ev.getY();
+			boolean leftSelectionHandleClicked = mLeftSelectionHandle.getBounds().contains(x, y);
+			boolean rightSelectionHandleClicked = mRightSelectionHandle.getBounds().contains(x, y);
+			boolean selectionHandleClicked = rightSelectionHandleClicked || leftSelectionHandleClicked;
+			return selectionHandleClicked;
+		}
+		return false;
+	}
+	
+	boolean isSelectionExpanding(MotionEvent ev)
+	{
+		if(!mIsSelectingText)
+		{
+			return false;
+		}
+		if(mSelectionArea == null)
+		{
+			mSelectionArea = new Rect(mSelY1, mSelY2, mSelX1, mSelX2);
+		}
+		else{
+			
+			Rect selArea = new Rect(mSelY1, mSelY2, mSelX1, mSelX2);
+			if(!selArea.contains(mSelectionArea))
+			{
+				mSelectionArea = selArea;
+				
+				return true;
+			}
+		}
+
+		return false;
+	}
+	
+	
+	
+	boolean isSelectionAreaClicked(MotionEvent ev)
+	{
+		if(ev != null)
+		{
+			int x = (int) ev.getX();
+			int y = (int) ev.getY();
+			int xPix = (int) mRenderer.mFontWidth;
+			int yPix = mRenderer.mFontLineSpacing + mRenderer.mFontLineSpacingAndAscent;
+			Rect selRect = new Rect(mSelX1 * xPix, mSelY1 * xPix,  mSelX2 * xPix , mSelY2 * yPix);	
+			
+			return selRect.contains(x, y);
+			
+		}
+		return false;
+	}
+	
+	void resetSelection()
 	{
 		mSelX1 = mSelY1 = mSelX2 = mSelY2 = -1;
+		mIsSelectingText = false; 
+		mInitialTextSelection = false;
+		mSelectionArea = null;
+		mClient.copyModeChanged(false); // Unlock drawer
 		invalidate();
 	}
 
-	public void showTextActions2x(final MotionEvent ev, final boolean copySelection) {
+	public void showSelectionMenu(final MotionEvent ev, final boolean copySelection) {
 	
+		
 		ArrayList<String> actions = new ArrayList<String>();
 		if(copySelection)
 		{
@@ -837,6 +914,7 @@ public final class TerminalView extends View {
 			actions.add(getContext().getString(R.string.paste_text));
 		}
 		
+		actions.add(getContext().getString(R.string.text_selection_more));
 		String[] dItems = actions.toArray(new String[actions.size()]);
 		final AlertDialog aDialog = new AlertDialog.Builder(getContext()).setItems(dItems, new DialogInterface.OnClickListener()
 			{
@@ -851,7 +929,7 @@ public final class TerminalView extends View {
 							{
 								String selectedText = mEmulator.getSelectedText(mSelX1, mSelY1, mSelX2, mSelY2).trim();
 								mTermSession.clipboardText(selectedText);
-								doResetSelection();
+								resetSelection();
 							}
 							else
 							{
@@ -864,7 +942,10 @@ public final class TerminalView extends View {
 							{
 								mEmulator.paste(paste);
 							}
-							doResetSelection();
+							resetSelection();
+							break;
+						case 2:
+							showContextMenu();
 							break;
 					}
 				}
@@ -872,19 +953,6 @@ public final class TerminalView extends View {
 
 			}).setCancelable(true).create();
 		
-		aDialog.setOnDismissListener(new DialogInterface.OnDismissListener(){
-
-				@Override
-				public void onDismiss(DialogInterface p1)
-				{
-					if(copySelection)
-					{
-						doResetSelection();
-					}
-				}
-				
-			
-		});
 		aDialog.setCanceledOnTouchOutside(true);
 		aDialog.show();	
 		
@@ -895,23 +963,29 @@ public final class TerminalView extends View {
     // @TargetApi(23)
     public void toggleSelectingText(MotionEvent ev) {
         mIsSelectingText = !mIsSelectingText;
-        mClient.copyModeChanged(mIsSelectingText);
-
-        if (mIsSelectingText) {
+        //mClient.copyModeChanged(mIsSelectingText);
+		
+        if (ev != null && mIsSelectingText) {	
+			mClient.copyModeChanged(true); // Lock drawer
             if (mLeftSelectionHandle == null) {
                 mLeftSelectionHandle = (BitmapDrawable) getContext().getResources().getDrawable(R.drawable.text_select_handle_left_material);
                 mRightSelectionHandle = (BitmapDrawable) getContext().getResources().getDrawable(R.drawable.text_select_handle_right_material);
             }
-
+            
+            
             int cx = (int) (ev.getX() / mRenderer.mFontWidth);
-            final boolean eventFromMouse = false; //ev.isFromSource(InputDevice.SOURCE_MOUSE);
+            // final boolean eventFromMouse = ev.isFromSource(InputDevice.SOURCE_MOUSE);
             // Offset for finger:
-            final int SELECT_TEXT_OFFSET_Y = eventFromMouse ? 0 : -40;
+            /*
+			final int SELECT_TEXT_OFFSET_Y = eventFromMouse ? 0 : -40;
             int cy = (int) ((ev.getY() + SELECT_TEXT_OFFSET_Y) / mRenderer.mFontLineSpacing) + mTopRow;
-
+            */
+			
+			int cy = (int) (ev.getY()  / mRenderer.mFontLineSpacing) + mTopRow;
+            
             mSelX1 = mSelX2 = cx;
             mSelY1 = mSelY2 = cy;
-
+            
             TerminalBuffer screen = mEmulator.getScreen();
             if (!" ".equals(screen.getSelectedText(mSelX1, mSelY1, mSelX1, mSelY1))) {
                 // Selecting something other than whitespace. Expand to word.
@@ -928,75 +1002,17 @@ public final class TerminalView extends View {
             mSelectionDownX = ev.getX();
             mSelectionDownY = ev.getY();
 			invalidate();
-			
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-		{
-            final ActionMode.Callback callback = new ActionMode.Callback() {
-                @Override
-                public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                    int show = MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT;
-                    menu.add(Menu.NONE, 1, Menu.NONE, R.string.copy_text).setShowAsAction(show);
-                    menu.add(Menu.NONE, 2, Menu.NONE, R.string.paste_text).setEnabled(Clipboard.hasText(getContext())).setShowAsAction(show);
-                    menu.add(Menu.NONE, 3, Menu.NONE, R.string.text_selection_more);
-                    return true;
-                }
 
-                @Override
-                public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                    return false;
-                }
-
-                @Override
-                public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                    if (!mIsSelectingText) {
-                        // Fix issue where the dialog is pressed while being dismissed.
-                        return true;
-                    }
-                    switch (item.getItemId()) {
-                        case 1:
-                            String selectedText = mEmulator.getSelectedText(mSelX1, mSelY1, mSelX2, mSelY2).trim();
-                            mTermSession.clipboardText(selectedText);
-                            break;
-                        case 2:
-							String paste = Clipboard.getText(getContext());
-							if (!TextUtils.isEmpty(paste))
-							{
-								mEmulator.paste(paste);
-							}
-                            break;
-                        case 3:
-                            showContextMenu();
-                            break;
-                    }
-                    toggleSelectingText(null);
-                    return true;
-                }
-
-                @Override
-                public void onDestroyActionMode(ActionMode mode) {
-                }
-
-            };
-
-            mActionMode = startActionMode(callback);
-		}
-
-    
         } else {
-
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			
+			if(isSelectionAreaClicked(ev))
 			{
-				if(mActionMode!=null){
-					doResetSelection();
-					mActionMode.finish();
-				}
-				 
+				showSelectionMenu(ev, true);
 			}
 			else
 			{
-				showTextActions2x(ev, true);
-			}
-		
+				resetSelection();
+			}		
         }
     }
 

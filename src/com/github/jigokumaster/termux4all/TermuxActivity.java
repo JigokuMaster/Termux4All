@@ -81,6 +81,7 @@ import android.graphics.*;
 import java.lang.reflect.*;
 import android.support.v4.widget.*;
 import android.media.*;
+import javax.net.ssl.*;
 
 
 
@@ -121,7 +122,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
 
     ExtraKeysView2x mExtraKeysView;
 
-	//ExtraKeysView mExtraKeysView;
+	// ExtraKeysView mExtraKeysView;
 	
     TermuxPreferences mSettings;
 
@@ -157,22 +158,19 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         @Override
         public void onReceive(Context context, Intent intent) {
             if (mIsVisible) {
-                String whatToReload = intent.getStringExtra(RELOAD_STYLE_ACTION);
+                /*String whatToReload = intent.getStringExtra(RELOAD_STYLE_ACTION);
                 /*if ("storage".equals(whatToReload)) {
                     if (ensureStoragePermissionGranted())
                         TermuxInstaller.setupStorageSymlinks(TermuxActivity.this);
                     return;
                 }*/
+				showToast(RELOAD_STYLE_ACTION, true);
                 checkForFontAndColors();
                 mSettings.reloadFromProperties(TermuxActivity.this);
 
-                final ViewPager viewPager = (ViewPager)findViewById(R.id.viewpager);
-                if (mExtraKeysView != null && viewPager != null) {
+                if (mExtraKeysView != null) {
                     mExtraKeysView.reload(findViewById(R.id.viewpager), mSettings.mExtraKeys, ExtraKeysView2x.defaultCharDisplay);
-                    ViewGroup.LayoutParams layoutParams = viewPager.getLayoutParams();
-                    layoutParams.height = layoutParams.height * mSettings.mExtraKeys.length + 10;
-                    viewPager.setLayoutParams(layoutParams);
-
+                 
                 }
             }
         }
@@ -255,11 +253,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
 			
 		}
 	
-		
-        ViewGroup.LayoutParams layoutParams = viewPager.getLayoutParams();
-        layoutParams.height = layoutParams.height * mSettings.mExtraKeys.length + 10;
-        viewPager.setLayoutParams(layoutParams);
-		
+
         viewPager.setAdapter(new PagerAdapter() {
             @Override
             public int getCount() {
@@ -940,8 +934,13 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
 				public void onClick(DialogInterface p1, int which)
 				{
 					String url = (String) urls[which];
+					/*
 					ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+					
 					clipboard.setPrimaryClip(new ClipData(null, new String[]{"text/plain"}, new ClipData.Item(url)));
+					*/
+					
+					Clipboard.setText(getApplicationContext(), url);
 					Toast.makeText(TermuxActivity.this, R.string.select_url_copied_to_clipboard, Toast.LENGTH_LONG).show();
 				}
 				

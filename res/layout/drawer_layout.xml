@@ -78,11 +78,11 @@
 
 	</android.support.v4.widget.DrawerLayout>
 
-	<android.support.v4.view.ViewPager
+	<com.github.jigokumaster.termux4all.HeightWrappingViewPager
 		android:id="@+id/viewpager"
 		android:visibility="gone"
 		android:layout_width="match_parent"
-		android:layout_height="37.5dp"
+		android:layout_height="wrap_content"
 		android:background="@android:drawable/screen_background_dark_transparent"
 		android:layout_alignParentBottom="true"/>
 
