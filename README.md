@@ -14,19 +14,16 @@ Termux4all requires (Android 2.1+) and has been tested on the following Android 
 Termux4all was originally developed for personal use. so i have built and included just few tools, 
 the bootstrap contains:
 
-* bash - 5.1.16 (built with musl-libc)
-* nano - 4.5 (built with musl-libc)
-* busybox - 1.34.1
-* aria2c - 1.36.0
+* bash - v5.1.16 (built with musl-libc)
+* nano - v4.5 (built with musl-libc)
+* busybox - v1.34.1
+* aria2c - v1.36.0
+* curl - v7.68
+* [nnn - v3.7] (https://github.com/jarun/nnn)
 * [sl] (https://github.com/mtoyoda/sl/) 
+* termux-reload-settings, termux-wake-lock, termux-wake-unlock
 
 # known issues:
-
-* for now , bash is not working on Android 2.2 and 2.1
-
-* Text selection in the terminal is not working smoothly
-
-* Scrolling while selecting text is not working
 
 * aria2c doesn't work on Android 2.2 and 2.1
 
