@@ -164,7 +164,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
                         TermuxInstaller.setupStorageSymlinks(TermuxActivity.this);
                     return;
                 }*/
-				showToast(RELOAD_STYLE_ACTION, true);
+				
                 checkForFontAndColors();
                 mSettings.reloadFromProperties(TermuxActivity.this);
 
